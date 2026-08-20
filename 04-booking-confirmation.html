@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Booking Confirmation — Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="disclaimer">
+  PROTOTYPE — page 4 of 4: Booking Confirmation. For internal PO / senior management review only.
+</div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">Rosewood Hong Kong</a>
+    <nav class="header-actions">
+      <button id="largeFontToggle" class="font-toggle" type="button" aria-pressed="false" title="Toggle Large Font Mode">
+        <span aria-hidden="true">Aa</span> Large Font
+      </button>
+      <span class="currency-chip">HKD ▾</span>
+      <a class="close-flow" href="index.html" aria-label="Close booking flow">✕</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <h1 class="page-title">Booking Confirmed</h1>
+
+  <div id="noBookingNotice" class="alert info" style="display:none;">
+    No booking found in this session. <a href="01-plan-your-stay.html">Start a new search</a>.
+  </div>
+
+  <div id="confirmationContent" style="display:none;">
+    <div class="panel">
+      <p id="thankYouMessage" style="font-family:Arial, sans-serif; font-size:1rem;"></p>
+      <div class="badges" id="confirmBadges"></div>
+      <h3 id="confirmRoomName" style="margin-bottom:4px;"></h3>
+      <p class="room-desc" id="confirmDates"></p>
+    </div>
+
+    <div class="panel">
+      <h2>Confirmation Email Preview</h2>
+      <p class="room-desc">This is what the guest receives by email, per FR-020 – FR-023.</p>
+      <div class="email-preview">
+        <div class="email-meta">
+          <div><strong>From:</strong> Rosewood Hong Kong Reservations &lt;hongkong.reservations@rosewoodhotels.com&gt;</div>
+          <div><strong>To:</strong> <span id="emailTo"></span></div>
+          <div><strong>Subject:</strong> <span id="emailSubject"></span></div>
+        </div>
+        <div class="email-body">
+          <h3>Your reservation is confirmed</h3>
+          <p id="emailGreeting"></p>
+          <p><strong>Confirmation number:</strong> <span id="emailConfirmationNumber"></span></p>
+          <p><strong>Room:</strong> <span id="emailRoomLine"></span></p>
+
+          <div id="emailAccessibleSection" style="display:none;">
+            <p><strong>Accessibility reminders for your stay:</strong></p>
+            <ul class="reminder-list" id="emailReminderList"></ul>
+          </div>
+
+          <p>Need anything before you arrive? Our front desk is here to help:<br>
+            <a href="tel:+85238918888">+852 3891 8888</a> ·
+            <a href="mailto:hongkong.reservations@rosewoodhotels.com">hongkong.reservations@rosewoodhotels.com</a>
+          </p>
+          <p>We look forward to welcoming you to Rosewood Hong Kong.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <hr>
+  <div class="footer-inner">
+    <h4>CONTACT US</h4>
+    <p>Rosewood Hong Kong, Victoria Dockside, 18 Salisbury Road, Tsim Sha Tsui, Kowloon, Hong Kong<br>
+      <a href="tel:+85238918888">+852 3891 8888</a></p>
+    <p><a href="mailto:hongkong.reservations@rosewoodhotels.com">hongkong.reservations@rosewoodhotels.com</a></p>
+  </div>
+</footer>
+
+<div class="proto-panel">
+  <details>
+    <summary>Prototype: Requirements demonstrated on this page</summary>
+    <ul>
+      <li><strong>FR-020</strong>: Confirmation email includes the accessibility icon/designation for accessible bookings.</li>
+      <li><strong>FR-021 / FR-023</strong>: Reminder text per facility tag, shown as property-configurable content (see FACILITY_TAGS in assets/app.js).</li>
+      <li><strong>FR-022</strong>: Frontline (front desk) contact information included in the email.</li>
+    </ul>
+  </details>
+  <details open>
+    <summary>Prototype: Analytics events log (data layer)</summary>
+    <ul id="analyticsLog" class="analytics-log"><li class="log-empty">No events yet.</li></ul>
+  </details>
+</div>
+
+<script src="assets/app.js"></script>
+<script>
+  (function () {
+    const state = RW.getState();
+    const booking = state.booking;
+
+    if (!booking) {
+      document.getElementById('noBookingNotice').style.display = 'block';
+      return;
+    }
+    document.getElementById('confirmationContent').style.display = 'block';
+
+    const room = booking.room;
+    const guest = booking.guest;
+
+    document.getElementById('thankYouMessage').textContent =
+      'Thank you, ' + guest.firstName + '! Your reservation ' + booking.confirmationNumber + ' is confirmed.';
+
+    let badges = '';
+    if (room.accessible) badges += '<span class="badge accessible">&#9855; Accessible / ADA-Compliant</span>';
+    room.tags.forEach(function (tagId) {
+      const tag = RW.FACILITY_TAGS[tagId];
+      badges += '<span class="badge facility">' + tag.icon + ' ' + tag.label + '</span>';
+    });
+    document.getElementById('confirmBadges').innerHTML = badges;
+    document.getElementById('confirmRoomName').textContent = room.name;
+    document.getElementById('confirmDates').textContent =
+      (booking.dates.checkin || 'Aug 25, 2026') + ' – ' + (booking.dates.checkout || 'Aug 27, 2026');
+
+    document.getElementById('emailTo').textContent = guest.email;
+    document.getElementById('emailSubject').textContent = 'Your Rosewood Hong Kong Reservation Confirmation — ' + booking.confirmationNumber;
+    document.getElementById('emailGreeting').textContent = 'Dear ' + guest.firstName + ' ' + guest.lastName + ',';
+    document.getElementById('emailConfirmationNumber').textContent = booking.confirmationNumber;
+    document.getElementById('emailRoomLine').textContent = room.name + (room.accessible ? ' \u2013 \u267F Accessible / ADA-Compliant' : '');
+
+    if (room.accessible && room.tags.length > 0) {
+      document.getElementById('emailAccessibleSection').style.display = 'block';
+      document.getElementById('emailReminderList').innerHTML = room.tags.map(function (tagId) {
+        const tag = RW.FACILITY_TAGS[tagId];
+        return '<li><strong>' + tag.icon + ' ' + tag.label + ':</strong> ' + tag.reminder + '</li>';
+      }).join('');
+    }
+  })();
+</script>
+</body>
+</html>

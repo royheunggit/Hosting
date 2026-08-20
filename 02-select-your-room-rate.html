@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Room Availability — Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="disclaimer">
+  PROTOTYPE — page 2 of 4: Select Your Room &amp; Rate (Room Availability). For internal PO / senior management review only.
+</div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">Rosewood Hong Kong</a>
+    <nav class="header-actions">
+      <button id="largeFontToggle" class="font-toggle" type="button" aria-pressed="false" title="Toggle Large Font Mode">
+        <span aria-hidden="true">Aa</span> Large Font
+      </button>
+      <span class="currency-chip">HKD ▾</span>
+      <a class="close-flow" href="index.html" aria-label="Close booking flow">✕</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <h1 class="page-title">Select Your Room &amp; Rate</h1>
+  <div class="search-summary" id="searchSummary">
+    Rosewood Hong Kong · Loading search… <a href="01-plan-your-stay.html">Modify Search</a>
+  </div>
+
+  <!-- Always-visible filter bar: satisfies FR-001/FR-002 (never in a drawer/overlay/collapsed panel) -->
+  <div class="filter-bar">
+    <span class="filter-chip">Price ▾</span>
+    <span class="filter-chip">Bed Type ▾</span>
+    <span class="filter-chip">View ▾</span>
+
+    <div class="accessible-control">
+      <span class="a-icon" aria-hidden="true">&#9855;</span>
+      <label for="accessibleToggle">
+        Accessible Room
+        <span class="switch">
+          <input type="checkbox" id="accessibleToggle" aria-describedby="accessibleHelp">
+          <span class="slider"></span>
+        </span>
+      </label>
+    </div>
+  </div>
+  <div class="callout" id="accessibleHelp">
+    ✅ Always visible in the primary filter bar — no drawer, overlay, or "more options" link (FR-001, FR-002).
+  </div>
+
+  <div class="results-meta" id="resultsMeta">Showing rooms…</div>
+
+  <div class="alert error" id="errorState" style="display:none;">
+    <strong>We're unable to verify accessible room availability right now.</strong><br>
+    Please try again shortly, or continue browsing all rooms with the Accessible Room filter turned off. (FR-012 — fail closed)
+  </div>
+
+  <div class="alert info" id="emptyState" style="display:none;">
+    <strong>No accessible rooms are currently listed for this property.</strong><br>
+    Please contact the property directly, or turn off the Accessible Room filter to see all available rooms. (FR-008)
+  </div>
+
+  <div class="room-list" id="roomList"></div>
+</main>
+
+<footer class="site-footer">
+  <hr>
+  <div class="footer-inner">
+    <h4>CONTACT US</h4>
+    <p>Rosewood Hong Kong, Victoria Dockside, 18 Salisbury Road, Tsim Sha Tsui, Kowloon, Hong Kong<br>
+      <a href="tel:+85238918888">+852 3891 8888</a></p>
+    <p><a href="mailto:hongkong.reservations@rosewoodhotels.com">hongkong.reservations@rosewoodhotels.com</a></p>
+  </div>
+</footer>
+
+<!-- Room Details modal: FR-017 -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    <h2 id="modalRoomName"></h2>
+    <div class="badges" id="modalBadges"></div>
+    <p class="room-desc" id="modalDesc"></p>
+    <h3 style="font-size:0.95rem;">Accessibility Facilities</h3>
+    <ul class="facility-list" id="modalFacilityList"></ul>
+    <button class="btn" id="modalSelectBtn">Select This Room</button>
+  </div>
+</div>
+
+<div class="proto-panel">
+  <details>
+    <summary>Prototype: Requirements demonstrated on this page</summary>
+    <ul>
+      <li><strong>FR-001 / FR-002</strong>: Accessible Room toggle always visible in the primary filter bar, no scrolling/expanding required.</li>
+      <li><strong>FR-003 / FR-004</strong>: Toggling on/off filters the listing to accessible-only vs. all rooms.</li>
+      <li><strong>FR-005 / FR-009</strong>: Accessible flag and facility tags sourced per room, supporting properties with partial/no tagging.</li>
+      <li><strong>FR-006</strong>: Filter combines additively with other search criteria (dates/occupancy carried from page 1).</li>
+      <li><strong>FR-007</strong>: Toggle state is visually unambiguous (on/off switch style).</li>
+      <li><strong>FR-008</strong>: Empty-state message — try "Simulate property with zero accessible rooms" below.</li>
+      <li><strong>FR-010</strong>: Toggle persists for the browsing session (reload this page or return from page 1).</li>
+      <li><strong>FR-012</strong>: Fail-closed error state — try "Simulate SynXis outage" below.</li>
+      <li><strong>FR-015</strong>: If you arrived from the Search Widget with the toggle on, it is already on here.</li>
+      <li><strong>FR-016 / FR-017 / FR-018 / FR-019</strong>: Facility icons render on cards and in the Room Details modal, driven by each room's configured tags.</li>
+      <li><strong>FR-032 / FR-033 / FR-036 / FR-038</strong>: Analytics events for the page toggle, adding an accessible room, zero-results, and facility icon views.</li>
+    </ul>
+  </details>
+  <details>
+    <summary>Prototype-only demo controls (not part of the live page)</summary>
+    <label>
+      <input type="checkbox" id="simulateOutage">
+      Simulate SynXis outage (accessibility data unavailable — fail closed)
+    </label>
+    <label>
+      <input type="checkbox" id="simulateEmpty">
+      Simulate a property with zero rooms tagged accessible
+    </label>
+  </details>
+  <details open>
+    <summary>Prototype: Analytics events log (data layer)</summary>
+    <ul id="analyticsLog" class="analytics-log"><li class="log-empty">No events yet.</li></ul>
+  </details>
+</div>
+
+<script src="assets/app.js"></script>
+<script>
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const state = RW.getState();
+    const search = state.searchParams || {
+      checkin: params.get('checkin'), checkout: params.get('checkout'), adults: params.get('adults') || '2'
+    };
+
+    // FR-015: honor the Search Widget's toggle if present in the URL; otherwise fall back to session (FR-010).
+    let accessibleOn;
+    if (params.has('accessible')) {
+      accessibleOn = params.get('accessible') === '1';
+    } else {
+      accessibleOn = !!state.accessibleFilter;
+    }
+    RW.setState({ accessibleFilter: accessibleOn });
+
+    document.getElementById('searchSummary').innerHTML =
+      'Rosewood Hong Kong · ' + (search.checkin || 'Aug 25, 2026') + ' – ' + (search.checkout || 'Aug 27, 2026') +
+      ' · ' + (search.adults || '2') + ' Adults · 1 Room <a href="01-plan-your-stay.html">Modify Search</a>';
+
+    const toggle = document.getElementById('accessibleToggle');
+    const simulateOutage = document.getElementById('simulateOutage');
+    const simulateEmpty = document.getElementById('simulateEmpty');
+    const roomList = document.getElementById('roomList');
+    const resultsMeta = document.getElementById('resultsMeta');
+    const errorState = document.getElementById('errorState');
+    const emptyState = document.getElementById('emptyState');
+
+    toggle.checked = accessibleOn;
+
+    function iconBadges(room) {
+      let html = '';
+      if (room.accessible) html += '<span class="badge accessible">&#9855; Accessible / ADA-Compliant</span>';
+      room.tags.forEach(function (tagId) {
+        const tag = RW.FACILITY_TAGS[tagId];
+        html += '<button type="button" class="badge facility" data-tag="' + tagId + '" data-room="' + room.id + '" title="' + tag.label + '">' + tag.icon + ' ' + tag.label + '</button>';
+      });
+      html += '<span class="badge">' + room.bed + '</span><span class="badge">' + room.view + '</span>';
+      return html;
+    }
+
+    function render() {
+      const outage = simulateOutage.checked;
+      const noAccessibleAtProperty = simulateEmpty.checked;
+
+      errorState.style.display = 'none';
+      emptyState.style.display = 'none';
+      roomList.style.display = 'flex';
+
+      if (toggle.checked && outage) {
+        // FR-012: fail closed — do not show results as if the data were accurate.
+        roomList.style.display = 'none';
+        errorState.style.display = 'block';
+        resultsMeta.textContent = 'Accessible Room filter unavailable';
+        return;
+      }
+
+      if (toggle.checked && noAccessibleAtProperty) {
+        roomList.style.display = 'none';
+        emptyState.style.display = 'block';
+        resultsMeta.textContent = 'Showing 0 of ' + RW.ROOM_TYPES.length + ' room types';
+        RW.trackEvent('accessible_zero_results_shown', {});
+        return;
+      }
+
+      const rooms = RW.ROOM_TYPES.filter(function (r) { return !toggle.checked || r.accessible; });
+      roomList.innerHTML = rooms.map(function (room) {
+        return '<div class="room-card" data-room="' + room.id + '">' +
+          '<div class="room-thumb"></div>' +
+          '<div class="room-body">' +
+            '<h3 class="room-name">' + room.name + '</h3>' +
+            '<div class="badges">' + iconBadges(room) + '</div>' +
+            '<p class="room-desc">' + room.desc + '</p>' +
+            '<div class="room-footer">' +
+              '<div class="price">' + RW.formatMoney(room.price, room.currency) + ' <span>/ night</span></div>' +
+              '<div class="room-actions">' +
+                '<button type="button" class="btn secondary view-details" data-room="' + room.id + '">View Details</button>' +
+                '<button type="button" class="btn select-room" data-room="' + room.id + '">Select Room</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      resultsMeta.textContent = 'Showing ' + rooms.length + ' of ' + RW.ROOM_TYPES.length + ' room types';
+
+      if (rooms.length === 0) {
+        roomList.style.display = 'none';
+        emptyState.style.display = 'block';
+        RW.trackEvent('accessible_zero_results_shown', {});
+      }
+    }
+
+    toggle.addEventListener('change', function () {
+      RW.setState({ accessibleFilter: toggle.checked });
+      RW.trackEvent('accessible_toggle_room_availability_page', { enabled: toggle.checked });
+      render();
+    });
+    simulateOutage.addEventListener('change', render);
+    simulateEmpty.addEventListener('change', render);
+
+    // Facility icon click tracking (FR-038) + Room Details modal (FR-017) + Select Room (FR-033)
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    function openModal(room) {
+      document.getElementById('modalRoomName').textContent = room.name;
+      document.getElementById('modalBadges').innerHTML = iconBadges(room);
+      document.getElementById('modalDesc').textContent = room.desc;
+      const list = document.getElementById('modalFacilityList');
+      if (room.tags.length === 0) {
+        list.innerHTML = '<li>No specific facility tags configured for this room (still included in accessible-only results if flagged ADA-compliant — FR-019).</li>';
+      } else {
+        list.innerHTML = room.tags.map(function (tagId) {
+          const tag = RW.FACILITY_TAGS[tagId];
+          return '<li><span class="a-icon">' + tag.icon + '</span><span><strong>' + tag.label + '</strong><br>' + tag.reminder + '</span></li>';
+        }).join('');
+      }
+      document.getElementById('modalSelectBtn').dataset.room = room.id;
+      modalBackdrop.classList.add('open');
+    }
+    document.getElementById('modalClose').addEventListener('click', function () { modalBackdrop.classList.remove('open'); });
+    modalBackdrop.addEventListener('click', function (e) { if (e.target === modalBackdrop) modalBackdrop.classList.remove('open'); });
+
+    function selectRoom(roomId) {
+      const room = RW.ROOM_TYPES.find(function (r) { return r.id === roomId; });
+      RW.setState({ selectedRoom: room, searchParams: search });
+      if (room.accessible) RW.trackEvent('accessible_room_added_to_cart', { roomId: room.id });
+      window.location.href = '03-confirm-your-reservation.html';
+    }
+
+    roomList.addEventListener('click', function (e) {
+      const facilityBtn = e.target.closest('.badge.facility');
+      if (facilityBtn) {
+        RW.trackEvent('facility_icon_viewed', { tag: facilityBtn.dataset.tag, roomId: facilityBtn.dataset.room, surface: 'room_card' });
+        return;
+      }
+      const viewBtn = e.target.closest('.view-details');
+      if (viewBtn) {
+        openModal(RW.ROOM_TYPES.find(function (r) { return r.id === viewBtn.dataset.room; }));
+        return;
+      }
+      const selectBtn = e.target.closest('.select-room');
+      if (selectBtn) selectRoom(selectBtn.dataset.room);
+    });
+
+    document.getElementById('modalFacilityList').addEventListener('click', function () {}); // labels only, no action
+    document.getElementById('modalSelectBtn').addEventListener('click', function (e) {
+      selectRoom(e.target.dataset.room);
+    });
+
+    render();
+  })();
+</script>
+</body>
+</html>

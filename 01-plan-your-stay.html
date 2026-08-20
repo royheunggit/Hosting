@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Room Booking — Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="disclaimer">
+  PROTOTYPE — page 1 of 4: Plan Your Stay. For internal PO / senior management review only.
+</div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">Rosewood Hong Kong</a>
+    <nav class="header-actions">
+      <button id="largeFontToggle" class="font-toggle" type="button" aria-pressed="false" title="Toggle Large Font Mode">
+        <span aria-hidden="true">Aa</span> Large Font
+      </button>
+      <span class="currency-chip">HKD ▾</span>
+      <a class="close-flow" href="index.html" aria-label="Close booking flow">✕</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <h1 class="page-title">Plan Your Stay</h1>
+  <p class="subtitle">Search availability at Rosewood Hong Kong.</p>
+
+  <form class="panel" id="searchForm">
+    <h2>Search</h2>
+    <div class="form-grid">
+      <div class="field">
+        <label for="hotel">Hotel</label>
+        <select id="hotel" name="hotel">
+          <option value="hong-kong">Rosewood Hong Kong</option>
+          <option value="bangkok" disabled>Rosewood Bangkok (Accessible Room filter not yet enabled)</option>
+        </select>
+        <small class="hint">This iteration launches for the mandated property only (FR-011).</small>
+      </div>
+      <div class="field">
+        <label for="checkin">Check-in</label>
+        <input type="date" id="checkin" name="checkin" required>
+      </div>
+      <div class="field">
+        <label for="checkout">Check-out</label>
+        <input type="date" id="checkout" name="checkout" required>
+      </div>
+      <div class="field">
+        <label for="adults">Adults</label>
+        <input type="number" id="adults" name="adults" min="1" max="6" value="2" required>
+      </div>
+    </div>
+
+    <div style="margin-top:20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div class="accessible-control">
+        <span class="a-icon" aria-hidden="true">&#9855;</span>
+        <label for="accessibleToggle">
+          Accessible Room
+          <span class="switch">
+            <input type="checkbox" id="accessibleToggle">
+            <span class="slider"></span>
+          </span>
+        </label>
+        <span class="tooltip-wrap">
+          <button type="button" class="info-btn" id="tooltipBtn" aria-label="What is an accessible room?">i</button>
+          <span class="tooltip-popover" id="tooltipPopover" role="tooltip">
+            <strong>What is an accessible room?</strong>
+            An accessible / ADA-compliant room is tagged by the property as meeting mobility, hearing, or visual accessibility standards — for example, roll-in showers, widened doorways, or visual alarm notifications.
+            <br><br>
+            <strong>Booking guidance:</strong>
+            Turn this on to see only accessible rooms in your results. Specific facilities (e.g., roll-in shower) are shown on each room once you search. For special equipment requests, add a note at checkout or contact the front desk directly.
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;">
+      <button type="submit" class="btn">Check Availability</button>
+    </div>
+  </form>
+</main>
+
+<footer class="site-footer">
+  <hr>
+  <div class="footer-inner">
+    <h4>CONTACT US</h4>
+    <p>Rosewood Hong Kong, Victoria Dockside, 18 Salisbury Road, Tsim Sha Tsui, Kowloon, Hong Kong<br>
+      <a href="tel:+85238918888">+852 3891 8888</a></p>
+    <p><a href="mailto:hongkong.reservations@rosewoodhotels.com">hongkong.reservations@rosewoodhotels.com</a></p>
+  </div>
+</footer>
+
+<div class="proto-panel">
+  <details>
+    <summary>Prototype: Requirements demonstrated on this page</summary>
+    <ul>
+      <li><strong>FR-013</strong>: "Accessible Room" toggle present in the Search Widget.</li>
+      <li><strong>FR-014</strong>: Tooltip (the "i" button) explains what qualifies as accessible and how to book.</li>
+      <li><strong>FR-015</strong>: Submitting with the toggle on carries the selection into the Room Availability page.</li>
+      <li><strong>FR-024 / FR-025</strong>: "Large Font Mode" toggle in the header, available from any page, persists across navigation.</li>
+      <li><strong>FR-031</strong>: Analytics event fires when the widget toggle changes.</li>
+      <li><strong>FR-035</strong>: Analytics event fires when the tooltip is opened.</li>
+      <li><strong>FR-037</strong>: Analytics event fires when Large Font Mode is toggled.</li>
+    </ul>
+  </details>
+  <details open>
+    <summary>Prototype: Analytics events log (data layer)</summary>
+    <ul id="analyticsLog" class="analytics-log"><li class="log-empty">No events yet.</li></ul>
+  </details>
+</div>
+
+<script src="assets/app.js"></script>
+<script>
+  (function () {
+    const state = RW.getState();
+    const accessibleToggle = document.getElementById('accessibleToggle');
+    const tooltipBtn = document.getElementById('tooltipBtn');
+    const tooltipPopover = document.getElementById('tooltipPopover');
+    let tooltipTracked = false;
+
+    // Restore prior toggle selection for this session, if any (consistent with FR-010 persistence).
+    accessibleToggle.checked = !!state.accessibleFilter;
+
+    accessibleToggle.addEventListener('change', function () {
+      RW.setState({ accessibleFilter: accessibleToggle.checked });
+      RW.trackEvent('accessible_toggle_search_widget', { enabled: accessibleToggle.checked });
+    });
+
+    tooltipBtn.addEventListener('click', function () {
+      const open = tooltipPopover.classList.toggle('open');
+      if (open && !tooltipTracked) {
+        RW.trackEvent('accessible_tooltip_viewed', { surface: 'search_widget' });
+        tooltipTracked = true;
+      }
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.tooltip-wrap')) tooltipPopover.classList.remove('open');
+    });
+
+    // Pre-fill sensible default dates for the demo.
+    const checkin = document.getElementById('checkin');
+    const checkout = document.getElementById('checkout');
+    const today = new Date();
+    const inDate = new Date(today.getTime() + 7 * 86400000);
+    const outDate = new Date(today.getTime() + 9 * 86400000);
+    checkin.value = inDate.toISOString().slice(0, 10);
+    checkout.value = outDate.toISOString().slice(0, 10);
+
+    document.getElementById('searchForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const params = new URLSearchParams({
+        checkin: checkin.value,
+        checkout: checkout.value,
+        adults: document.getElementById('adults').value,
+        accessible: accessibleToggle.checked ? '1' : '0'
+      });
+      RW.setState({
+        searchParams: {
+          checkin: checkin.value,
+          checkout: checkout.value,
+          adults: document.getElementById('adults').value
+        },
+        accessibleFilter: accessibleToggle.checked
+      });
+      window.location.href = '02-select-your-room-rate.html?' + params.toString();
+    });
+  })();
+</script>
+</body>
+</html>

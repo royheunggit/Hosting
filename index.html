@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Prototype Overview — Accessible Room Experience</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="disclaimer">
+  PROTOTYPE — for internal PO / senior management review only. Static demo built to match the production page structure; not final visual design.
+</div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <span class="brand">Rosewood Hong Kong</span>
+    <nav class="header-actions">
+      <span class="currency-chip">HKD ▾</span>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <h1 class="page-title">Accessible Room Experience — Prototype Walkthrough</h1>
+  <p class="subtitle">4-page guest journey demonstrating every functional requirement in <a href="../spec.md">spec.md</a>, built from the production "Plan your stay", "Room Availability", and "Checkout" page structures.</p>
+
+  <div class="panel">
+    <h2>Walk through the journey in order</h2>
+    <ol style="font-family:Arial, sans-serif; font-size:0.95rem; line-height:2;">
+      <li><a href="01-plan-your-stay.html"><strong>1. Plan Your Stay</strong></a> — search widget with Accessible Room toggle + tooltip, and the global Large Font Mode toggle.</li>
+      <li><a href="02-select-your-room-rate.html"><strong>2. Select Your Room &amp; Rate</strong></a> — Room Availability page: always-visible Accessible Room filter, facility icons, Room Details modal, empty-state and SynXis-outage demos.</li>
+      <li><a href="03-confirm-your-reservation.html"><strong>3. Confirm Your Reservation</strong></a> — checkout carrying the accessibility designation and facility tags through to booking.</li>
+      <li><a href="04-booking-confirmation.html"><strong>4. Booking Confirmation</strong></a> — on-screen confirmation plus a confirmation-email preview with reminders and frontline contact info.</li>
+    </ol>
+    <p style="font-family:Arial, sans-serif; font-size:0.85rem; color:var(--muted);">Tip: use the journey in order — selections made on pages 1–2 carry forward to 3–4 via the browser session (matching the "persist for the browsing session" decision in spec.md).</p>
+  </div>
+
+  <div class="panel">
+    <h2>Requirements coverage map</h2>
+    <table style="width:100%; border-collapse:collapse; font-family:Arial, sans-serif; font-size:0.85rem;">
+      <thead>
+        <tr style="text-align:left; border-bottom:2px solid var(--line);">
+          <th style="padding:8px 6px;">Page</th>
+          <th style="padding:8px 6px;">Functional requirements demonstrated</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--line);"><td style="padding:8px 6px;">1. Plan Your Stay</td><td style="padding:8px 6px;">FR-013, FR-014, FR-015, FR-024, FR-025, FR-031, FR-035, FR-037</td></tr>
+        <tr style="border-bottom:1px solid var(--line);"><td style="padding:8px 6px;">2. Select Your Room &amp; Rate</td><td style="padding:8px 6px;">FR-001 – FR-012, FR-016 – FR-019, FR-032, FR-033, FR-036, FR-038</td></tr>
+        <tr style="border-bottom:1px solid var(--line);"><td style="padding:8px 6px;">3. Confirm Your Reservation</td><td style="padding:8px 6px;">FR-034 (plus carries forward FR-016/FR-019 data)</td></tr>
+        <tr><td style="padding:8px 6px;">4. Booking Confirmation</td><td style="padding:8px 6px;">FR-020, FR-021, FR-022, FR-023</td></tr>
+      </tbody>
+    </table>
+    <p style="font-family:Arial, sans-serif; font-size:0.8rem; color:var(--muted); margin-top:10px;">FR-026 – FR-030 (SynXis tagging config, staff dashboard, daily alert) are backend/operational requirements with no guest-facing UI and are described in spec.md rather than prototyped here.</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <hr>
+  <div class="footer-inner">
+    <h4>CONTACT US</h4>
+    <p>Rosewood Hong Kong, Victoria Dockside, 18 Salisbury Road, Tsim Sha Tsui, Kowloon, Hong Kong<br>
+      <a href="tel:+85238918888">+852 3891 8888</a></p>
+    <p><a href="mailto:hongkong.reservations@rosewoodhotels.com">hongkong.reservations@rosewoodhotels.com</a></p>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
